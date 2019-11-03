@@ -1,0 +1,193 @@
+---
+title: "Project 3"
+author: "Alain T Kuiete"
+date: "10/17/2019"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(rvest)
+library(dplyr)
+library(httr)
+library(tidyverse)
+library(ggplot2)
+library(plotly)
+library(tidyr)
+```
+
+### Data Science Skills
+
+#### Data Science General Skills
+
+```{r}
+text_string <- read_file("https://github.com/AlainKuiete/DATA607/blob/master/datascienceskills")
+search_word <- c('python', 'machine', 'learning','analytic', 'team', 'teams', 'r','aql','communicative','communication', 'analytical','java','scala', 'hdoop','spark','computer', 'science', 'communicate','engineering', 'solving', 'Tableau', 'sofware', 'statistical','modeling','quantitative',
+'customer', 'statistics', 'management', 'models', 'predictive', 'problems')
+
+
+Results <- data_frame(text = text_string) %>% 
+  mutate(text = tolower(text)) %>% 
+  mutate(text = str_remove_all(text, '[[:punct:]]')) %>% 
+  mutate(tokens = str_split(text, "\\s+")) %>%
+  unnest() %>% 
+  count(tokens) %>% 
+  filter(tokens %in%search_word) %>%
+  mutate(freq = n / sum(n)) %>% 
+  arrange(desc(n))
+```
+
+
+### The table with words and frequencies.
+```{r}
+Results
+```
+
+
+
+
+```{r}
+ggplot2::ggplot(Results, aes(x=tokens, y=freq, fill=tokens)) + 
+  geom_bar(width = 0.75,  stat = "identity", colour = "black", size = 1) + 
+  coord_polar(theta = "x") + xlab("") + ylab("") + 
+  ggtitle("Word Frequency") + theme(legend.position = "none") + 
+  labs(x = NULL, y = NULL)
+
+plotly::ggplotly(ggplot2::ggplot(Results, 
+                  aes(x=tokens, y=freq, fill=tokens)) + 
+                   geom_bar(width = 0.75, stat = "identity", colour = "black", size = 1) + 
+                   xlab("") + ylab("") + ggtitle("Word Frequency") + 
+                   theme(legend.position = "none") + 
+                   labs(x = NULL, y = NULL) + 
+                   theme(plot.subtitle = element_text(vjust = 1), plot.caption = element_text(vjust = 1), axis.text.x = element_text(angle = 90)) + 
+                   theme(panel.background = element_rect(fill = "honeydew1"), plot.background = element_rect(fill = "antiquewhite")))%>% 
+  config(displaylogo = F) %>% config(showLink = F)
+```
+
+##### Downloading data
+```{r}
+dsg <- read.csv("https://raw.githubusercontent.com/AlainKuiete/DATA607/master/ds_general_skills_revised.csv" )
+str(dsg)
+```
+
+#### Subsetting the Data Science soft Skills 
+```{r}
+dskg <-dsg[1:15,]
+```
+
+#### reshaping my dataframe
+```{r}
+colnames(dskg) <- c("D.Skills", "LinkedIn", "Indeed", "SimplyHired", "Monster")
+dskg$LinkedIn <- as.numeric(gsub(",","",dskg$LinkedIn))
+dskg$Indeed <- as.numeric(gsub(",","",dskg$Indeed))
+dskg$SimplyHired <- as.numeric(gsub(",","",dskg$SimplyHired))
+dskg$Monster <- as.numeric(gsub(",","",dskg$Monster))
+```
+
+
+#### Computation
+```{r}
+s.dskg <- summarise(dskg, sL=sum(LinkedIn, na.rm=TRUE), sI= sum(Indeed, na.rm=TRUE), sS=sum(SimplyHired, na.rm=TRUE),
+           sM=sum(Monster, na.rm=TRUE))
+
+tsg <- sum(s.dskg)
+
+g.skills <- dskg%>% mutate(D.Skills, pct=(LinkedIn+Indeed+SimplyHired+Monster)/tsg)%>%
+  select(D.Skills,pct)
+g.skills
+```
+
+##### Changing the values of variable D.skill
+```{r}
+D.Skills.abv <-c("02ml", "01an", "03st", "04cs", "05co", "06ma", "07vi","08ai",
+                     "09dl","10nlp", "11sd", "12nn", "13de", "14pm","15se")
+g.skild <- data.frame(g.skills,
+                      ds.abv = D.Skills.abv,
+                      D.Skills = g.skills$D.Skills,
+                      pct=g.skills$pct)
+
+```
+
+#### Visualisation
+
+```{r}
+ggplot(g.skild, 
+       aes(x=ds.abv, y = pct))+
+  geom_col(aes(fill=D.Skills), position = "dodge")+
+  xlab("Genaral Skills")+ylab("Overall percentage")+
+  ggtitle("General Skills for Data Science")
+```
+
+#### Analysis, Machine Learning, Statistics, Computer Science and Communication are general skill required for Data Scientists.
+
+
+
+#### Data Science Soft Skills
+
+##### Downloading data
+```{r}
+dss <- read.csv("https://raw.githubusercontent.com/AlainKuiete/DATA607/master/ds_job_listing_software.csv")
+```
+
+
+#### Subsetting the Data Science soft Skills 
+```{r}
+dsk <- dss[1:30,1:5]
+str(dsk)
+```
+
+#### reshaping my dataframe
+```{r}
+colnames(dsk) <- c("D.Skills", "LinkedIn", "Indeed", "SimplyHired", "Monster")
+dsk$LinkedIn <- as.numeric(gsub(",","",dsk$LinkedIn))
+dsk$Indeed <- as.numeric(gsub(",","",dsk$Indeed))
+dsk$SimplyHired <- as.numeric(gsub(",","",dsk$SimplyHired))
+dsk$Monster <- as.numeric(gsub(",","",dsk$Monster))
+```
+
+
+#### Computation
+```{r}
+s.dsks <- summarise(dsk, sL=sum(LinkedIn), sI= sum(Indeed), sS=sum(SimplyHired),
+           sM=sum(Monster))
+ts <- sum(s.dsks)
+
+skills <- dsk%>% mutate(D.Skills, pct=(LinkedIn+Indeed+SimplyHired+Monster)/ts)%>%select(D.Skills,pct)
+skill <-skills[1:10,]
+skill
+```
+
+
+
+#### Visualisation
+```{r}
+
+ggplot(skill, 
+       aes(x=D.Skills, y = pct))+
+  geom_col(aes(fill=D.Skills), position = "dodge")+
+  xlab("Computer Skills")+ylab("Overall percentage")+
+  ggtitle("Top 10 Sofware Skills for Data Science")
+```
+
+### Python and R are the most software computer skills recommanded for Data Scientist.
+
+
+##### Reference: The Most in Demand Skills for Data Scientists by Jeff Hale. Toward Data Science
+
+
+
+
+```{r}
+url1 <- "https://www.google.com/search?safe=active&rlz=1C1EJFC_enUS834US834&sxsrf=ACYBGNSOYZtHkxHTh41kYm0q3DH8TnMuHw:1572152661833&ei=VSW1Xa3EMsHk_Ab9_afoAw&q=data+sciences+jobs&oq=data+sciences+jobs&gs_l=psy-ab.3..0i10l10.41861.55760..56318...1.0..1.3382.6568.0j1j7-1j1j1......0....1..gws-wiz.....10..35i362i39.rCNbLJ7wjdA&uact=5&ibp=htl;jobs&sa=X&ved=2ahUKEwjMi9q01bvlAhWCm-AKHSUxD-wQp4wCMAB6BAgFEAE#fpstate=tldetail&htidocid=n1I1nIYsv9Heqo3hAAAAAA%3D%3D&htivrt=jobs"
+```
+
+
+### counting words with R
+```{r}
+url2 <- "https://www.codementor.io/jhwatts2010/counting-words-with-r-ds35hzgmj"
+```
